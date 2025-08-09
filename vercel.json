@@ -1,9 +1,22 @@
 {
   "version": 2,
-  "rewrites": [
+  "functions": {
+    "api/index.ts": {
+      "runtime": "@vercel/node"
+    }
+  },
+  "routes": [
     {
-      "source": "/(.*)",
-      "destination": "/api"
+      "src": "/api/webhook",
+      "dest": "/api/index.ts"
+    },
+    {
+      "src": "/api",
+      "dest": "/api/index.ts"
+    },
+    {
+      "src": "/",
+      "dest": "/public/index.html"
     }
   ]
 }
