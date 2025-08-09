@@ -10,7 +10,16 @@ if (!bot_key) {
   throw new Error("API_BOT_KEY environment variable is required");
 }
 
-const bot = new TelegramBot(bot_key, { polling: true });
+// Инициализируем бота только если не на Vercel
+let bot: TelegramBot;
+
+if (process.env.VERCEL !== "1") {
+  // Локальная разработка - используем polling
+  bot = new TelegramBot(bot_key, { polling: true });
+} else {
+  // Vercel - создаем бота без polling
+  bot = new TelegramBot(bot_key);
+}
 
 // Хранилище данных пользователей (в продакшене лучше использовать базу данных)
 interface UserData {
@@ -426,9 +435,26 @@ async function finishSurvey(chatId: number) {
   delete userData[chatId];
 }
 
+// Middleware для парсинга JSON
+app.use(express.json());
+
+// Webhook endpoint для Telegram (только для Vercel)
+app.post("/api/webhook", (req, res) => {
+  if (process.env.VERCEL === "1") {
+    bot.processUpdate(req.body);
+  }
+  res.sendStatus(200);
+});
+
 // Express routes для Vercel
 app.get("/", (_req, res) => res.send("Botler Survey Bot is running!"));
+app.get("/api", (_req, res) => res.send("Botler Survey Bot is running!"));
 
-app.listen(3000, () => console.log("Server ready on port 3000."));
+// Для локальной разработки
+if (process.env.VERCEL !== "1") {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => console.log(`Server ready on port ${PORT}`));
+}
 
-module.exports = app;
+// Экспорт для Vercel
+export default app;
